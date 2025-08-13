@@ -183,7 +183,7 @@ def main_worker(args):
     # 3) Prepare checkpoint directory for MLPs
     # -------------------------
     # Example: /path/to/some_pretrained_checkpoint -> /path/to/contact_checkpoints
-    parent_dir = os.path.dirname(args.checkpoint_path)  # get parent directory of checkpoint_path
+    parent_dir = os.path.dirname(args.detr_ckpt_path)  # get parent directory of checkpoint_path
     
     if wandb_active:
         timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -195,24 +195,26 @@ def main_worker(args):
     # 4) Load pretrained DETR
     # -------------------------
     if world_rank == 0:
-        print(f"[Rank 0] Loading DETR from checkpoint: {args.checkpoint_path}")
-    detr = DetrForObjectDetection.from_pretrained(args.checkpoint_path)
+        print(f"[Rank 0] Loading DETR from checkpoint: {args.detr_ckpt_path}")
+    detr = DetrForObjectDetection.from_pretrained(args.detr_ckpt_path)
     detr.eval()  # freeze DETR's parameters
 
     # -------------------------
     # 5) Initialize ContactModel
     # -------------------------
-    # contact_model = ContactModel(
-    #     detr=detr,
-    #     hidden_dim=256,
-    #     num_contact_classes=2,
-    #     max_pairs=64,
-    # ).to(device)
+    if args.baseline:
+        contact_model = ContactModel(
+            detr=detr,
+            hidden_dim=256,
+            num_contact_classes=2,
+            max_pairs=64,
+        ).to(device)
+    else:
 
-    contact_model = AdvancedContactModel(
-        detr=detr,
-        d_model=256,
-    ).to(device)
+        contact_model = AdvancedContactModel(
+            detr=detr,
+            d_model=256,
+        ).to(device)
 
     # Wrap with DistributedDataParallel
     contact_model = torch.nn.parallel.DistributedDataParallel(
@@ -233,7 +235,7 @@ def main_worker(args):
 
     train_dataset = ContactPairsDataset(
         data_root_dir=args.data_root_dir,
-        seq_list_path=args.seq_list_path,
+        seq_list_path=args.train_seq_list_path,
         processor=None,
         transforms=None
     )
@@ -364,14 +366,15 @@ def main_worker(args):
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--checkpoint_path", type=str, required=True,
+    parser.add_argument("--detr_ckpt_path", type=str, required=True,
                         help="Path or identifier for the DETR pretrained weights.")
     parser.add_argument("--data_root_dir", type=str, required=True,
                         help="Root directory of the data.")
-    parser.add_argument("--seq_list_path", type=str, required=True,
+    parser.add_argument("--train_seq_list_path", type=str, required=True,
                         help="Path to a JSON file listing training sequences.")
     parser.add_argument("--val_seq_list_path", type=str, default=None,
                         help="Path to a JSON file listing validation sequences.")
+    parser.add_argument("--baseline", action="store_true")
     parser.add_argument("--batch_size", type=int, default=4, help="Training batch size.")
     parser.add_argument("--lr", type=float, default=1e-4, help="Learning rate.")
     parser.add_argument("--num_epochs", type=int, default=10, help="Number of training epochs.")

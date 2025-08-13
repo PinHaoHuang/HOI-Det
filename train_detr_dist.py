@@ -28,8 +28,8 @@ def collate_fn(batch):
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--data_root", type=str, required=True)
-    parser.add_argument("--train_seq_list", type=str, default='train.json')
-    parser.add_argument("--val_seq_list", type=str, default='val.json')
+    parser.add_argument("--train_seq_list_path", type=str, default='train.json')
+    parser.add_argument("--val_seq_list_path", type=str, default='val.json')
     parser.add_argument("--lr", type=float, default=1e-4)
     parser.add_argument("--lr_backbone", type=float, default=1e-5)
     parser.add_argument("--weight_decay", type=float, default=1e-4)
@@ -83,13 +83,13 @@ def main(args):
     # aggregator_json_path is a file that contains a list of JSON annotation paths
     train_dataset = HOT3dDETRDatasetAggregator(
         data_root_dir=data_root_dir,
-        seq_list_path=args.train_seq_list,
+        seq_list_path=args.train_seq_list_path,
         processor=processor,
         transforms=None
     )
     val_dataset = HOT3dDETRDatasetAggregator(
         data_root_dir=data_root_dir,
-        seq_list_path=args.val_seq_list,
+        seq_list_path=args.val_seq_list_path,
         processor=processor,
         transforms=None
     )

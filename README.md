@@ -52,8 +52,15 @@ accordingly based on your need.
 
 ## Train Object Detector (DETR)
 
-Run
 ```
 torchrun --nproc_per_node=NUM_GPUs train_detr_dist.py --data_root PATH_TO_DATA
+```
+
+## Train Contact Detector
+
+```
+torchrun --nproc_per_node=NUM_GPUS train_contact_dist.py --detr_ckpt_path PATH_TO_YOUR_TRAINED_DETR --data_root_dir /PATH_TO_DATA
+--train_seq_list_path train.json --val_seq_list_path val.json --batch_size 8 --lr 1e-5
+
 ```
 
