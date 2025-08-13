@@ -27,6 +27,12 @@ def collate_fn(batch):
 
 def parse_args():
     parser = argparse.ArgumentParser()
+    parser.add_argument("--data_root", type=str, required=True)
+    parser.add_argument("--train_seq_list", type=str, default='train.json')
+    parser.add_argument("--val_seq_list", type=str, default='val.json')
+    parser.add_argument("--lr", type=float, default=1e-4)
+    parser.add_argument("--lr_backbone", type=float, default=1e-5)
+    parser.add_argument("--weight_decay", type=float, default=1e-4)
     parser.add_argument("--checkpoint", type=str, default=None,
                         help="Path to a local pretrained checkpoint or huggingface model id.")
     parser.add_argument("--epochs", type=int, default=10, help="Number of training epochs.")
@@ -69,20 +75,21 @@ def main(args):
     # --------------------------------------------------
     # 3) Build Dataset & Distributed Samplers
     # --------------------------------------------------
-    data_root_dir = '/data/HOT3D_dataset'
+    # data_root_dir = '/data/HOT3D_dataset'
+    data_root_dir = args.data_root
 
     processor = DetrImageProcessor.from_pretrained("facebook/detr-resnet-50")
 
     # aggregator_json_path is a file that contains a list of JSON annotation paths
     train_dataset = HOT3dDETRDatasetAggregator(
         data_root_dir=data_root_dir,
-        seq_list_path='train.json',
+        seq_list_path=args.train_seq_list,
         processor=processor,
         transforms=None
     )
     val_dataset = HOT3dDETRDatasetAggregator(
         data_root_dir=data_root_dir,
-        seq_list_path='val.json',
+        seq_list_path=args.val_seq_list,
         processor=processor,
         transforms=None
     )
@@ -135,9 +142,9 @@ def main(args):
     # Wrap in DistributedDataParallel
     model = DDP(model, device_ids=[local_rank], output_device=local_rank)
 
-    lr = 1e-4
-    lr_backbone = 1e-5
-    weight_decay = 1e-4
+    lr = args.lr
+    lr_backbone = args.lr_backbone
+    weight_decay = args.weight_decay
     ttl_epoch = args.epochs
 
     # Separate parameter groups for the backbone vs. rest
