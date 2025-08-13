@@ -63,4 +63,9 @@ torchrun --nproc_per_node=NUM_GPUS train_contact_dist.py --detr_ckpt_path PATH_T
 --train_seq_list_path train.json --val_seq_list_path val.json --batch_size 8 --lr 1e-5
 
 ```
+Put 
+`
+--baseline
+`
+to train the baseline contact detector. If not, the default uses a transformer based advanced contact detector.
 
